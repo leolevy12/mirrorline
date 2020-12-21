@@ -7,34 +7,34 @@
 
     <style>
         * {
-          box-sizing: border-box;
+            box-sizing: border-box;
         }
-        
+
         .grid {
-          width: 75%;
-          float: left;
-          padding: 15px;
+            width: 75%;
+            float: left;
+            padding: 15px;
         }
-        
+
         .panel {
-          width: 25%;
-          float: left;
-          padding: 15px;
+            width: 25%;
+            float: left;
+            padding: 15px;
         }
-        </style>
+    </style>
 </head>
 
 <body>
     <div class="grid">
         <canvas id="canvas" width="1100" height="1100"></canvas>
     </div style="width: 25%">
-    
+
     <div class="panel">
         <h1>
             <div id="level">Level: 1</div>
             <div id="score">Score: 0</div>
         </h1>
-    </div> 
+    </div>
 
     <!-- Fabric.js library -->
     <script src="https://cdn.jsdelivr.net/npm/fabric@4.2.0/dist/fabric.min.js"></script>
@@ -44,36 +44,87 @@
         const radius = 10
 
         var levels = [
-            // level 1
+
             {
-                "points": [{ "x": 7, "y": 5, "found": false },
-                { "x": 7, "y": 10, "found": false }],
+                "points": [{ "x": 7, "y": 5 },
+                { "x": 7, "y": 10 }],
                 "mirrorLine": [500, 25, 500, 1025]
             },
-            // level 2
             {
-                "points": [{ "x": 7, "y": 5, "found": false },
-                { "x": 14, "y": 4, "found": false },
-                { "x": 10, "y": 10, "found": false }],
+                "points": [{ "x": 7, "y": 5 },
+                { "x": 14, "y": 4 },
+                { "x": 10, "y": 10 }],
                 "mirrorLine": [25, 500, 1025, 500]
             },
-            // level 3
             {
-                "points": [{ "x": 3, "y": 2, "found": false },
-                { "x": 5, "y": 5, "found": false },
-                { "x": 7, "y": 6, "found": false },
-                { "x": 19, "y": 1, "found": false },
-                { "x": 3, "y": 8, "found": false },
-                { "x": 5, "y": 12, "found": false },
-                { "x": 14, "y": 14, "found": false }],
+                "points": [{ "x": 8, "y": 6 },
+                { "x": 10, "y": 8 }],
+                "mirrorLine": [25, 25, 1025, 1025]
+            },
+            {
+                "points": [
+                    { "x": 10, "y": 3 }
+                    , { "x": 6, "y": 7 }
+                    , { "x": 8, "y": 7 }
+                    , { "x": 4, "y": 11 }
+                    , { "x": 8, "y": 11 }
+                    , { "x": 3, "y": 16 }
+                    , { "x": 9, "y": 16 }
+                    , { "x": 9, "y": 18 }
+
+                ],
                 "mirrorLine": [500, 25, 500, 1025]
             },
-            //level 4
             {
-                "points": [{ "x": 8, "y": 6, "found": false },
-                { "x": 10, "y": 8, "found": false }],
+                "points": [{ "x": 3, "y": 2 },
+                { "x": 5, "y": 5 },
+                { "x": 7, "y": 6 },
+                { "x": 19, "y": 1 },
+                { "x": 3, "y": 8 },
+                { "x": 5, "y": 12 },
+                { "x": 14, "y": 14 }],
+                "mirrorLine": [500, 25, 500, 1025]
+            },
+            {
+                "points": [{ "x": 5, "y": 3 },
+                { "x": 4, "y": 1 },
+                { "x": 15, "y": 7 },
+                { "x": 16, "y": 9 },
+                { "x": 20, "y": 1 }],
+                "mirrorLine": [1025, 25, 25, 1025]
+            },
+            {
+                "points": [
+                    { "x": 7, "y": 4 }
+                    , { "x": 9, "y": 5 }
+                    , { "x": 11, "y": 5 }
+                    , { "x": 13, "y": 5 }
+                    , { "x": 15, "y": 5 }
+                    , { "x": 17, "y": 4 }
+                    , { "x": 16, "y": 6 }
+                    , { "x": 16, "y": 9 }
+                    , { "x": 17, "y": 13 }
+                    , { "x": 17, "y": 15 }
+
+                ],
                 "mirrorLine": [25, 25, 1025, 1025]
-            }
+            },
+            {
+                "points": [{ "x": 4, "y": 11 }
+                    , { "x": 6, "y": 10 }
+                    , { "x": 8, "y": 10 }
+                    , { "x": 10, "y": 11 }
+                    , { "x": 12, "y": 10 }
+                    , { "x": 13, "y": 10 }
+                    , { "x": 15, "y": 11 }
+                    , { "x": 16, "y": 10 }
+                    , { "x": 18, "y": 10 }
+                    , { "x": 19, "y": 11 }
+
+                ],
+                "mirrorLine": [25, 600, 1025, 600]
+            },
+
         ]
 
         function mirror(Q, P, R) {
@@ -132,6 +183,18 @@
                     // draw mirror line
                     const line1 = new fabric.Line(level.mirrorLine, { strokeWidth: 3, stroke: '#FF0505' })
                     canvas.add(line1)
+
+                    // draw polyline
+                    var points = []
+                    level.points.forEach(function (item) {
+                        points.push(new fabric.Point(item.x * 50, item.y * 50))
+                    });
+                    var polyline = new fabric.Polyline(points, {
+                        fill: '',
+                        stroke: 'green',
+                        strokeWidth: 2
+                    });
+                    canvas.add(polyline);
 
                     // draw mirror points
                     level.points.forEach(function (item) {
@@ -249,6 +312,19 @@
                 }
 
                 if (all_found) {
+                    // draw mirror polyline
+                    var points = []
+                    level.points.forEach(function (item) {
+                        p2 = mirror([item.x * 50, item.y * 50], [mirrorLine[0], mirrorLine[1]], [mirrorLine[2], mirrorLine[3]])
+                        points.push(new fabric.Point(p2[0], p2[1]))
+                    });
+                    var polyline = new fabric.Polyline(points, {
+                        fill: '',
+                        stroke: 'green',
+                        strokeWidth: 2
+                    });
+                    canvas.add(polyline);
+
                     levelIdx++
                     setTimeout(function () {
                         nextLevel(levelIdx, canvas)
