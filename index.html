@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Leo's Spiegel</title>
+    <meta charset="UTF-8" />
+
+    <style>
+        * {
+          box-sizing: border-box;
+        }
+        
+        .grid {
+          width: 75%;
+          float: left;
+          padding: 15px;
+        }
+        
+        .panel {
+          width: 25%;
+          float: left;
+          padding: 15px;
+        }
+        </style>
+</head>
+
+<body>
+    <div class="grid">
+        <canvas id="canvas" width="1100" height="1100"></canvas>
+    </div style="width: 25%">
+    
+    <div class="panel">
+        <h1>
+            <div id="level">Level: 1</div>
+            <div id="score">Score: 0</div>
+        </h1>
+    </div> 
+
+    <!-- Fabric.js library -->
+    <script src="https://cdn.jsdelivr.net/npm/fabric@4.2.0/dist/fabric.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script>
+
+        const radius = 10
+
+        var levels = [
+            // level 1
+            {
+                "points": [{ "x": 7, "y": 5, "found": false },
+                { "x": 7, "y": 10, "found": false }],
+                "mirrorLine": [500, 25, 500, 1025]
+            },
+            // level 2
+            {
+                "points": [{ "x": 7, "y": 5, "found": false },
+                { "x": 14, "y": 4, "found": false },
+                { "x": 10, "y": 10, "found": false }],
+                "mirrorLine": [25, 500, 1025, 500]
+            },
+            // level 3
+            {
+                "points": [{ "x": 3, "y": 2, "found": false },
+                { "x": 5, "y": 5, "found": false },
+                { "x": 7, "y": 6, "found": false },
+                { "x": 19, "y": 1, "found": false },
+                { "x": 3, "y": 8, "found": false },
+                { "x": 5, "y": 12, "found": false },
+                { "x": 14, "y": 14, "found": false }],
+                "mirrorLine": [500, 25, 500, 1025]
+            },
+            //level 4
+            {
+                "points": [{ "x": 8, "y": 6, "found": false },
+                { "x": 10, "y": 8, "found": false }],
+                "mirrorLine": [25, 25, 1025, 1025]
+            }
+        ]
+
+        function mirror(Q, P, R) {
+            let [vx, vy] = [R[0] - P[0], R[1] - P[1]];
+            let [x, y] = [P[0] - Q[0], P[1] - Q[1]];
+            let r = 1 / (vx * vx + vy * vy);
+            return [Q[0] + 2 * (x - x * vx * vx * r - y * vx * vy * r),
+            Q[1] + 2 * (y - y * vy * vy * r - x * vx * vy * r)];
+        }
+
+        function drawGrid(canvas) {
+            // horizontal lines
+            for (var i = 1; i <= 20; i++) {
+                var step = i * 50
+                const line = new fabric.Line([25, 50 * i, 1025, 50 * i], { strokeWidth: 1, stroke: '#070707' })
+                canvas.add(line)
+                var text = new fabric.Text(i.toString(), { left: step - 5, top: 0, fontSize: 15 });
+                canvas.add(text)
+            }
+
+            // vertical lines
+            for (var i = 1; i <= 20; i++) {
+                var step = i * 50
+                const line = new fabric.Line([50 * i, 25, 50 * i, 1025], { strokeWidth: 1, stroke: '#070707' })
+                canvas.add(line)
+                var text = new fabric.Text(i.toString(), { left: 0, top: step - 10, fontSize: 15 });
+                canvas.add(text)
+            }
+        }
+
+        function nextLevel(levelIdx, canvas) {
+
+            $('#level').text("Level: " + (levelIdx + 1));
+
+            canvas.clear()
+
+            if (levelIdx >= levels.length) {
+                var text = new fabric.Text("Game Over", { left: 500, top: 500, fontSize: 60 });
+                canvas.add(text);
+                text.selectable = false;
+                return
+            }
+
+            // fading text
+            var text = new fabric.Text("Level " + (levelIdx + 1), { left: 500, top: 500, fontSize: 60 });
+            canvas.add(text);
+            text.animate('fontSize', '0', {
+                duration: 1500,
+                onChange: canvas.renderAll.bind(canvas),
+                onComplete: function () {
+                    canvas.remove(text);
+                    drawGrid(canvas)
+
+                    level = levels[levelIdx]
+
+                    // draw mirror line
+                    const line1 = new fabric.Line(level.mirrorLine, { strokeWidth: 3, stroke: '#FF0505' })
+                    canvas.add(line1)
+
+                    // draw mirror points
+                    level.points.forEach(function (item) {
+                        const circle = new fabric.Circle({ top: item.y * 50 - radius, left: item.x * 50 - radius, radius: radius, fill: '#0000FF' });
+                        canvas.add(circle)
+                    });
+
+                    canvas.forEachObject(function (object) {
+                        object.selectable = false;
+                    });
+
+                }
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+
+            var score = 0
+            var levelIdx = 0
+
+            const fabric = window.fabric;
+
+            const canvas = new fabric.Canvas('canvas')
+
+            canvas.on('mouse:down', function (options) {
+
+                if (levelIdx >= levels.length)
+                    return
+
+                var x = options.e.layerX
+                var y = options.e.layerY
+
+                x = Math.round(x / 50) * 50
+                y = Math.round(y / 50) * 50
+
+                console.log("Click: (" + x + "," + y + ")")
+                var level = levels[levelIdx]
+                var mirrorLine = level.mirrorLine
+
+                var found = false
+                for (let item of level.points) {
+
+                    var p2 = mirror([x, y], [mirrorLine[0], mirrorLine[1]], [mirrorLine[2], mirrorLine[3]])
+
+                    console.log(p2[0] / 50, p2[1] / 50)
+
+                    if (item.x == p2[0] / 50 && item.y == p2[1] / 50) {
+
+                        found = true
+
+                        if (!item.found) {
+                            const circle = new fabric.Circle({ top: y - radius, left: x - radius, radius: radius, fill: 'green' });
+                            canvas.add(circle)
+                            circle.selectable = false
+
+                            item.found = true
+
+                            score += 10
+
+
+                            var text = new fabric.Text("+10", { top: y + radius, left: x + radius, fontSize: 40 });
+                            canvas.add(text);
+
+
+                            text.animate('fontSize', '15', {
+                                duration: 1000,
+                                onChange: canvas.renderAll.bind(canvas),
+                                onComplete: function () {
+                                    canvas.remove(text);
+                                }
+                            });
+                        }
+                        break;
+                    }
+                }
+
+                if (!found) {
+
+                    // fading red circle
+                    var circle = new fabric.Circle({ radius: 10, fill: 'red', left: x - 10, top: y - 10 });
+                    canvas.add(circle);
+                    circle.animate('opacity', '0', {
+                        duration: 1000,
+                        onChange: canvas.renderAll.bind(canvas),
+                        onComplete: function () {
+                            canvas.remove(circle);
+                        }
+                    });
+
+                    // fading text
+                    var text = new fabric.Text("-5", { top: y + 10, left: x + 10, fontSize: 40 });
+                    canvas.add(text);
+                    text.animate('fontSize', '15', {
+                        duration: 1000,
+                        onChange: canvas.renderAll.bind(canvas),
+                        onComplete: function () {
+                            canvas.remove(text);
+                        }
+                    });
+
+                    score -= 5
+                }
+
+
+
+                if (score < 0)
+                    score = 0
+
+                $('#score').text("Score: " + score);
+
+                var all_found = true
+                for (let item of level.points) {
+                    if (!item.found)
+                        all_found = false
+                }
+
+                if (all_found) {
+                    levelIdx++
+                    setTimeout(function () {
+                        nextLevel(levelIdx, canvas)
+                    }, 2000);
+                }
+
+            });
+
+            nextLevel(levelIdx, canvas)
+
+            canvas.forEachObject(function (object) {
+                object.selectable = false;
+            });
+        });
+    </script>
+</body>
+
+</html>
